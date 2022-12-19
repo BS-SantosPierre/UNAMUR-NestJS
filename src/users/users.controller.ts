@@ -1,4 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Roles } from 'src/decorators/roles/roles.decorator';
 import { CreateUserDTO } from 'src/dtos/users/users-create.dto';
 import { UpdateUserDTO } from 'src/dtos/users/users-update.dto';
 import { User } from 'src/entities/user.entity';
@@ -14,7 +16,9 @@ export class UsersController {
 	) {}
 
 	@Get()
+	@Roles('admin')
 	async findAll() {
+		console.log(Reflect.getMetadata('roles', this.findAll));
 		return this.usersService.findAll();
 	}
 
@@ -43,5 +47,10 @@ export class UsersController {
 		}
 
 		return this.usersService.update(user, dto);
+	}
+
+	@Post('many')
+	async createMany(@Body() dto:CreateUserDTO[]){
+		return await this.usersService.createMany(dto);
 	}
 }

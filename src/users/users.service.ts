@@ -1,11 +1,11 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDTO } from 'src/dtos/users/users-create.dto';
 import { UpdateUserDTO } from 'src/dtos/users/users-update.dto';
 import { Hobby } from 'src/entities/hobby.entity';
 import { User } from 'src/entities/user.entity';
 import { HobbiesService } from 'src/hobbies/hobbies.service';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -61,5 +61,31 @@ export class UsersService {
 		}
 
 		return this.repo.save(entity);
+	}
+
+	async createMany(dto: CreateUserDTO[]) {
+		const users = [];
+		await this.repo.manager.transaction(async (em: EntityManager) => {
+				for (const userDTO of dto) {
+					if (!await this.checkIfExist(userDTO.firstName, userDTO.lastName)) {
+						const user = em.create(User ,userDTO);
+						users.push(await em.save(user));
+					}else {
+						throw new UnprocessableEntityException();
+					}
+				}
+		});
+
+		return users;
+	}
+
+	private async checkIfExist(firstName: string, lastName: string) {
+		const qb = this.repo.createQueryBuilder('u')
+					.where("TRIM(LOWER(u.first_name)) LIKE TRIM(LOWER(:firstName))", { firstName })
+					.andWhere("TRIM(LOWER(u.last_name)) LIKE TRIM(LOWER(:lastName))", { lastName })
+
+		const user = await qb.getOne();
+
+		return user;
 	}
 }
