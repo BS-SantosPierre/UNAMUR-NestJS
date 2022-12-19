@@ -1,4 +1,5 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { VarcharColumn } from "src/decorators/varchar-column/varchar-column.decorator";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { Hobby } from "./hobby.entity";
 
 @Entity({ name: 'users' })
@@ -6,10 +7,10 @@ export class User {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column({ name: 'first_name' })
+	@VarcharColumn('first_name')
 	firstName?: string;
 
-	@Column({ name: 'last_name' })
+	@VarcharColumn('last_name')
 	lastName: string;
 
 	@Column({ name: 'is_admin', type: 'boolean', default: false  })

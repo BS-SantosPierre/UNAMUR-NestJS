@@ -1,11 +1,11 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDTO } from 'src/dtos/users/users-create.dto';
 import { UpdateUserDTO } from 'src/dtos/users/users-update.dto';
 import { Hobby } from 'src/entities/hobby.entity';
 import { User } from 'src/entities/user.entity';
 import { HobbiesService } from 'src/hobbies/hobbies.service';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -61,5 +61,43 @@ export class UsersService {
 		}
 
 		return this.repo.save(entity);
+	}
+
+	async createMany(dto: CreateUserDTO[]){
+		const users = [];
+
+		await this.repo.manager.transaction(async (em: EntityManager) => {
+			for (const { firstName, lastName, isAdmin } of dto) {
+				if (await this._checkIfExist(firstName, lastName)) {
+					throw new UnprocessableEntityException();
+				}
+				const user = em.create(User, {firstName, lastName, isAdmin});
+				users.push(await em.save(user));
+			}
+		});
+
+		return users;
+
+		// const queryRunner = this.repo.queryRunner;
+
+		// queryRunner.connect();
+
+		// try {
+		// 	queryRunner.commitTransaction();
+		// } catch (error) {
+		// 	queryRunner.rollbackTransaction();
+		// } finally {
+		// 	queryRunner.release();
+		// }
+	}
+
+	private async _checkIfExist(firstName: string, lastName: string) {
+		const qb = this.repo.createQueryBuilder('u')
+								.where('LOWER(u.first_name) LIKE LOWER(:firstName)', {firstName})
+								.andWhere('LOWER(u.last_name) LIKE LOWER(:lastName)', {lastName});
+
+		const user = await qb.getOne();
+
+		return user;
 	}
 }
