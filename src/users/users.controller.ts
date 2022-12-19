@@ -1,5 +1,4 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, UseInterceptors, UsePipes } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { Roles } from 'src/decorators/roles/roles.decorator';
 import { CreateUserDTO } from 'src/dtos/users/users-create.dto';
 import { UpdateUserDTO } from 'src/dtos/users/users-update.dto';
@@ -16,7 +15,6 @@ export class UsersController {
 	) {}
 
 	@Get()
-	@Roles('admin')
 	async findAll() {
 		console.log(Reflect.getMetadata('roles', this.findAll));
 		return this.usersService.findAll();
